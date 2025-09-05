@@ -1,0 +1,39 @@
+import express from "express";
+import { Router } from "express";
+import {
+  deleteUser,
+  loginUser,
+  registerUser,
+  userProfile,
+  updatePassword,
+  viewNeighbors,
+  updateProfileInfo,
+  updateProfilePhoto,
+} from "../controllers/userController.js";
+import { authenticateJWT } from "../middlewares/authMiddlewares.js";
+import { upload } from "../multer.js";
+
+const router = Router();
+
+router.post("/register", upload.single("avatar"), registerUser);
+
+router.post("/login", loginUser);
+
+router.get("/profile", authenticateJWT, userProfile);
+
+router.delete("/deleteUser", authenticateJWT, deleteUser);
+
+router.put("/updateProfile", authenticateJWT, updateProfileInfo);
+
+router.put(
+  "/updateProfilePhoto",
+  authenticateJWT,
+  upload.single("avatar"),
+  updateProfilePhoto
+);
+
+router.put("/updatePassword", authenticateJWT, updatePassword);
+
+router.get("/viewNeighbors", authenticateJWT, viewNeighbors);
+
+export default router;
