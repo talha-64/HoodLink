@@ -5,8 +5,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
 
-export const __filename = fileURLToPath(import.meta.url);
-export const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -22,7 +22,7 @@ export const registerUser = async (req, res) => {
     );
 
     if (avatar) {
-      profile_pic_path = `${avatar}`;
+      profile_pic_path = `/uploads/profile_pictures/${avatar}`;
     }
 
     if (neighborhoodResult.rows.length === 0) {
@@ -88,9 +88,13 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid Email or Password" });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { id: user.id, email: user.email, neighborhood_id: user.neighborhood_id },
+      JWT_SECRET,
+      {
+        expiresIn: process.env.ACCESS_TOKEN_TTL,
+      }
+    );
 
     const { password: _, ...userData } = user;
 
@@ -122,25 +126,33 @@ export const userProfile = async (req, res) => {
 };
 
 export const deleteUser = async (req, res) => {
+  const id = req.user.id;
   const { password } = req.body;
   try {
-    const id = req.user.id;
-
-    const userResult = await pool.query(
-      "SELECT password FROM users WHERE id = $1",
-      [id]
-    );
+    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
+      id,
+    ]);
 
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
     const hashedPassword = userResult.rows[0].password;
+    const profilePic = userResult.rows[0].profile_pic;
 
     const match = await bcrypt.compare(password, hashedPassword);
 
     if (!match) {
       return res.status(401).json({ message: "Invalid Password" });
+    }
+
+    const oldProfilePic = userResult.rows[0].profile_pic;
+
+    if (oldProfilePic) {
+      const oldFilePath = path.join(__dirname, `../..${oldProfilePic}`);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
     }
 
     await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
@@ -231,16 +243,13 @@ export const updateProfilePhoto = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (avatar) {
-      profile_pic_path = `/uploads/${avatar}`;
+    const oldProfilePic = userResult.rows[0].profile_pic;
 
-      const oldProfilePic = userResult.rows[0].profile_pic;
+    if (avatar) {
+      profile_pic_path = `/uploads/profile_pictures/${avatar}`;
 
       if (oldProfilePic) {
-        const oldFilePath = path.join(
-          __dirname,
-          `../../uploads/profile_pictures/${oldProfilePic}`
-        );
+        const oldFilePath = path.join(__dirname, `../..${oldProfilePic}`);
         if (fs.existsSync(oldFilePath)) {
           fs.unlinkSync(oldFilePath);
         }
@@ -250,8 +259,22 @@ export const updateProfilePhoto = async (req, res) => {
         id,
       ]);
 
-      res.status(200).json({ msg: "Profile Picture Updated Successfully" });
+      return res
+        .status(200)
+        .json({ msg: "Profile Picture Updated Successfully" });
     }
+
+    if (oldProfilePic) {
+      const oldFilePath = path.join(__dirname, `../..${oldProfilePic}`);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+
+    await pool.query(`UPDATE users SET profile_pic = NULL WHERE id = $1`, [id]);
+    return res
+      .status(200)
+      .json({ msg: "Profile Picture Removed Successfully" });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ error: "Internal Server Error" });

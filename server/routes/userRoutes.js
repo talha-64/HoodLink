@@ -11,11 +11,11 @@ import {
   updateProfilePhoto,
 } from "../controllers/userController.js";
 import { authenticateJWT } from "../middlewares/authMiddlewares.js";
-import { upload } from "../multer.js";
+import { registerUploadProfile, updateUploadProfile } from "../multer.js";
 
 const router = Router();
 
-router.post("/register", upload.single("avatar"), registerUser);
+router.post("/register", registerUploadProfile.single("avatar"), registerUser);
 
 router.post("/login", loginUser);
 
@@ -28,7 +28,7 @@ router.put("/updateProfile", authenticateJWT, updateProfileInfo);
 router.put(
   "/updateProfilePhoto",
   authenticateJWT,
-  upload.single("avatar"),
+  updateUploadProfile.single("avatar"),
   updateProfilePhoto
 );
 
