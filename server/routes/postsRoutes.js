@@ -9,6 +9,8 @@ import {
   getPost,
   getPostForEdit,
   updatePost,
+  filterPostByCategory,
+  searchPost,
 } from "../controllers/postsController.js";
 
 const router = Router();
@@ -28,11 +30,19 @@ router.delete("/deletePost/:id", authenticateJWT, deletePost);
 
 router.get("/editPost/:id", authenticateJWT, getPostForEdit);
 
-router.get(
+router.put(
   "/updatePost/:id",
   authenticateJWT,
   uploadPost.array("images", 3),
   updatePost
 );
+
+router.get(
+  "/filterByCategory/:category",
+  authenticateJWT,
+  filterPostByCategory
+);
+
+router.get("/search", authenticateJWT, searchPost);
 
 export default router;

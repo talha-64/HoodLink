@@ -308,3 +308,116 @@ export const updatePost = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const filterPostByCategory = async (req, res) => {
+  const category = req.params.category;
+  const neighborhood_id = req.user.neighborhood_id;
+  const categories = ["help_request", "news", "lost_and_found"];
+
+  try {
+    const neighborhoodResult = await pool.query(
+      "SELECT * FROM neighborhoods WHERE id = $1",
+      [neighborhood_id]
+    );
+
+    if (neighborhoodResult.rows.length === 0) {
+      return res.status(404).json({ message: "Neighborhood not found." });
+    }
+
+    if (!categories.includes(category)) {
+      return res.status(400).json({ message: "Invalid Category" });
+    }
+
+    const postsResult = await pool.query(
+      `SELECT p.id, p.title, p.content, p.category, p.created_at, p.user_id, p.neighborhood_id, u.full_name, u.profile_pic FROM posts p JOIN users u ON p.user_id = u.id WHERE p.neighborhood_id = $1 AND p.category = $2 ORDER BY p.created_at DESC`,
+      [neighborhood_id, category]
+    );
+
+    const posts = postsResult.rows;
+
+    if (posts.length === 0) {
+      return res.status(200).json({ posts: [] });
+    }
+
+    const postIds = posts.map((p) => p.id);
+    const imagesResult = await pool.query(
+      `SELECT post_id, image_path FROM post_images WHERE post_id = ANY($1::int[])`,
+      [postIds]
+    );
+
+    const imagesByPost = {};
+    imagesResult.rows.forEach((row) => {
+      if (!imagesByPost[row.post_id]) {
+        imagesByPost[row.post_id] = [];
+      }
+      imagesByPost[row.post_id].push(row.image_path);
+    });
+
+    const postsWithImages = posts.map((post) => ({
+      ...post,
+      images: imagesByPost[post.id] || [],
+    }));
+
+    res.status(200).json({ posts: postsWithImages });
+  } catch (err) {
+    console.error("Get Post by category error:", err.message);
+
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const searchPost = async (req, res) => {
+  const neighborhood_id = req.user.neighborhood_id;
+  const { q } = req.query;
+
+  try {
+    const neighborhoodResult = await pool.query(
+      "SELECT * FROM neighborhoods WHERE id = $1",
+      [neighborhood_id]
+    );
+
+    if (neighborhoodResult.rows.length === 0) {
+      return res.status(404).json({ message: "Neighborhood not found." });
+    }
+
+    if (!q) {
+      return res.status(400).json({ message: "Missing search query" });
+    }
+
+    const searchQuery = await pool.query(
+      `SELECT p.id, p.title, p.content, p.category, p.created_at, p.user_id, p.neighborhood_id, u.full_name, u.profile_pic FROM posts p JOIN users u ON p.user_id = u.id WHERE to_tsvector('english', title || ' ' || content) @@ plainto_tsquery($1) AND p.neighborhood_id = $2 ORDER BY p.created_at DESC`,
+      [q, neighborhood_id]
+    );
+
+    const posts = searchQuery.rows;
+
+    if (posts.length === 0) {
+      return res.status(200).json({ posts: [] });
+    }
+
+    const postIds = posts.map((p) => p.id);
+    const imagesResult = await pool.query(
+      `SELECT post_id, image_path FROM post_images WHERE post_id = ANY($1::int[])`,
+      [postIds]
+    );
+
+    const imagesByPost = {};
+    imagesResult.rows.forEach((row) => {
+      if (!imagesByPost[row.post_id]) {
+        imagesByPost[row.post_id] = [];
+      }
+      imagesByPost[row.post_id].push(row.image_path);
+    });
+
+    const postsWithImages = posts.map((post) => ({
+      ...post,
+      images: imagesByPost[post.id] || [],
+    }));
+
+    res.status(200).json({ posts: postsWithImages });
+  } catch (err) {
+    console.error("Get Search Post error:", err.message);
+
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
