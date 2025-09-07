@@ -70,7 +70,7 @@ export const createPost = async (req, res) => {
 };
 
 export const getPost = async (req, res) => {
-  const postId = req.params.id;
+  const postId = req.params.postId;
 
   try {
     const postResult = await pool.query(
@@ -153,7 +153,7 @@ export const getAllNeighborhoodPosts = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   const userId = req.user.id;
-  const postId = req.params.id;
+  const postId = req.params.postId;
   try {
     const postResult = await pool.query("SELECT * FROM posts WHERE id = $1", [
       postId,
@@ -198,7 +198,7 @@ export const deletePost = async (req, res) => {
 
 export const getPostForEdit = async (req, res) => {
   const userId = req.user.id;
-  const postId = req.params.id;
+  const postId = req.params.postId;
 
   try {
     const postResult = await pool.query(
@@ -235,7 +235,7 @@ export const getPostForEdit = async (req, res) => {
 
 export const updatePost = async (req, res) => {
   const userId = req.user.id;
-  const postId = req.params.id;
+  const postId = req.params.postId;
   const categories = ["help_request", "news", "lost_and_found"];
   const { title, content, category } = req.body;
 
@@ -291,7 +291,7 @@ export const updatePost = async (req, res) => {
       }
     }
 
-    await pool.query(
+    const updatedPost = await pool.query(
       `UPDATE posts SET title = $1, content = $2, category = $3 WHERE id = $4`,
       [
         title || post.title,
@@ -301,7 +301,9 @@ export const updatePost = async (req, res) => {
       ]
     );
 
-    res.status(200).json({ msg: "Post Updated Successfully" });
+    res
+      .status(200)
+      .json({ msg: "Post Updated Successfully", post: updatedPost.rows[0] });
   } catch (err) {
     console.error("updatePost error:", err.message);
 

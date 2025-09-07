@@ -15,33 +15,24 @@ import {
 
 const router = Router();
 
-router.post(
-  "/createPost",
-  authenticateJWT,
-  uploadPost.array("images", 3),
-  createPost
-);
+router.post("/", authenticateJWT, uploadPost.array("images", 3), createPost);
 
-router.get("/getPost/:id", authenticateJWT, getPost);
+router.get("/:postId", authenticateJWT, getPost);
 
-router.get("/getAllPosts", authenticateJWT, getAllNeighborhoodPosts);
+router.get("/allPosts", authenticateJWT, getAllNeighborhoodPosts);
 
-router.delete("/deletePost/:id", authenticateJWT, deletePost);
+router.delete("/:postId", authenticateJWT, deletePost);
 
-router.get("/editPost/:id", authenticateJWT, getPostForEdit);
+router.get("/editPost/:postId", authenticateJWT, getPostForEdit);
 
 router.put(
-  "/updatePost/:id",
+  ":postId",
   authenticateJWT,
   uploadPost.array("images", 3),
   updatePost
 );
 
-router.get(
-  "/filterByCategory/:category",
-  authenticateJWT,
-  filterPostByCategory
-);
+router.get("/:category", authenticateJWT, filterPostByCategory);
 
 router.get("/search", authenticateJWT, searchPost);
 
