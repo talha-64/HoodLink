@@ -8,6 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 import neighborhoodRoutes from "./routes/neighborhoodRoutes.js";
 import postsRoutes from "./routes/postsRoutes.js";
 import commentRoutes from "./routes/commentsRoutes.js";
+import evenRoutes from "./routes/eventsRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -22,8 +23,9 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use("/api/users", userRoutes);
 app.use("/api/neighborhood", neighborhoodRoutes);
-app.use("/api/post", postsRoutes, commentRoutes);
+app.use("/api/post", postsRoutes);
 app.use("/api/post", commentRoutes);
+app.use("/api/events", evenRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running at port ${PORT}`);
