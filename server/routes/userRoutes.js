@@ -9,6 +9,7 @@ import {
   viewNeighbors,
   updateProfileInfo,
   updateProfilePhoto,
+  home,
 } from "../controllers/userController.js";
 import { authenticateJWT } from "../middlewares/authMiddlewares.js";
 import { registerUploadProfile, updateUploadProfile } from "../multer.js";
@@ -21,19 +22,21 @@ router.post("/login", loginUser);
 
 router.get("/profile", authenticateJWT, userProfile);
 
-router.delete("/deleteUser", authenticateJWT, deleteUser);
+router.get("/", authenticateJWT, home);
 
-router.put("/updateProfile", authenticateJWT, updateProfileInfo);
+router.delete("/user", authenticateJWT, deleteUser);
+
+router.put("/profile", authenticateJWT, updateProfileInfo);
 
 router.put(
-  "/updateProfilePhoto",
+  "/profilePhoto",
   authenticateJWT,
-  updateUploadProfile.single("avatar"),
+  updateUploadProfile.single("profile_pic"),
   updateProfilePhoto
 );
 
-router.put("/updatePassword", authenticateJWT, updatePassword);
+router.put("/password", authenticateJWT, updatePassword);
 
-router.get("/viewNeighbors", authenticateJWT, viewNeighbors);
+router.get("/neighbors", authenticateJWT, viewNeighbors);
 
 export default router;

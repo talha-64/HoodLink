@@ -17,9 +17,9 @@ const router = Router();
 
 router.post("/", authenticateJWT, uploadPost.array("images", 3), createPost);
 
-router.get("/:postId", authenticateJWT, getPost);
-
 router.get("/allPosts", authenticateJWT, getAllNeighborhoodPosts);
+
+router.get("/:postId", authenticateJWT, getPost);
 
 router.delete("/:postId", authenticateJWT, deletePost);
 
