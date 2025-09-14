@@ -9,6 +9,8 @@ import {
   getEventForEdit,
   updateEvent,
   searchEvent,
+  searchMyEvent,
+  getMyEvents,
 } from "../controllers/eventsController.js";
 
 const router = Router();
@@ -17,7 +19,11 @@ router.post("/", authenticateJWT, createEvent);
 
 router.get("/allEvents", authenticateJWT, getAllNeighborhoodEvent);
 
+router.get("/myAllEvents", authenticateJWT, getMyEvents);
+
 router.get("/search", authenticateJWT, searchEvent);
+
+router.get("/searchMyEvents", authenticateJWT, searchMyEvent);
 
 router.get("/editEvent/:eventId", authenticateJWT, getEventForEdit);
 

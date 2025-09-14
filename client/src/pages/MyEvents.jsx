@@ -17,13 +17,14 @@ import { ToastAction } from "@/components/ui/toast";
 import EventCard from "@/components/events/EventCard";
 import { Link } from "react-router-dom";
 
-function Events() {
+function MyEvents() {
   const { toast } = useToast();
   const { token, logout } = useAuth();
   const [events, setEvents] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
+  const [reload, setReload] = useState(false);
   const [tab, setTab] = useState("allEvents");
   const [searchInput, setSearchInput] = useState("");
   const [lastSearch, setLastSearch] = useState("");
@@ -43,7 +44,7 @@ function Events() {
 
     if (trimmedInput === "" || trimmedInput === lastSearch) {
       setLastSearch("");
-      getEvents(tab);
+      getMyEvents(tab);
     } else {
       setLastSearch(trimmedInput);
       searchEvents(trimmedInput);
@@ -54,7 +55,7 @@ function Events() {
     setIsLoading(true);
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/events/search${
+        `${import.meta.env.VITE_API_URL}/api/events/searchMyEvents${
           query ? `?q=${query}` : ""
         }`,
         {
@@ -86,11 +87,11 @@ function Events() {
 
   // Fetching Events logic
 
-  const getEvents = async (filter = "") => {
+  const getMyEvents = async (filter = "") => {
     setIsLoading(true);
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/events/allEvents${
+        `${import.meta.env.VITE_API_URL}/api/events/myAllEvents${
           filter ? `?filter=${filter}` : ""
         }`,
         {
@@ -161,7 +162,7 @@ function Events() {
         event_Date: "",
         Location: "",
       });
-      getEvents(tab);
+      getMyEvents(tab);
     } catch (err) {
       if (err?.status === 401) {
         logout();
@@ -181,17 +182,25 @@ function Events() {
     }
   };
 
+  // Manage Reload Form child
+
+  const triggerReload = () => setReload((prev) => !prev);
+
   // Effect hooks
 
   useEffect(() => {
     if (token) {
-      getEvents(tab);
+      getMyEvents(tab);
     }
-  }, [token, refresh]);
+  }, [token, refresh, reload]);
 
   useEffect(() => {
     setSearchInput("");
-    getEvents(tab);
+    if (lastSearch) {
+      searchEvents(lastSearch);
+    } else {
+      getMyEvents(tab);
+    }
   }, [tab]);
 
   if (isLoading) {
@@ -237,11 +246,9 @@ function Events() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
             {/* Title & Subtitle */}
             <div>
-              <h1 className="text-2xl font-bold text-white mb-1">
-                Neighborhood Events
-              </h1>
+              <h1 className="text-2xl font-bold text-white mb-1">My Events</h1>
               <p className="text-sm text-gray-400">
-                Discover and join community activities
+                Discover and manage your events
               </p>
             </div>
 
@@ -417,9 +424,9 @@ function Events() {
                 className={
                   "mb-6 md:mb-0 h-10 px-4 text-sm flex items-center justify-center bg-blue-600 text-white rounded-md transition"
                 }
-                to={"/myevents"}
+                to={"/events"}
               >
-                My Events
+                Neighborhood Events
               </Link>
             </div>
 
@@ -434,7 +441,11 @@ function Events() {
                         key={event.id}
                         className="bg-gray-900 rounded-xl p-4 shadow border border-gray-700"
                       >
-                        <EventCard event={event} />
+                        <EventCard
+                          event={event}
+                          allowControls={true}
+                          onReload={triggerReload}
+                        />
                       </div>
                     ))}
                   </div>
@@ -454,7 +465,11 @@ function Events() {
                         key={event.id}
                         className="bg-gray-900 rounded-xl p-4 shadow border border-gray-700"
                       >
-                        <EventCard event={event} />
+                        <EventCard
+                          event={event}
+                          allowControls={true}
+                          onReload={triggerReload}
+                        />
                       </div>
                     ))}
                   </div>
@@ -474,7 +489,11 @@ function Events() {
                         key={event.id}
                         className="bg-gray-900 rounded-xl p-4 shadow border border-gray-700"
                       >
-                        <EventCard event={event} />
+                        <EventCard
+                          event={event}
+                          allowControls={true}
+                          onReload={triggerReload}
+                        />
                       </div>
                     ))}
                   </div>
@@ -492,4 +511,4 @@ function Events() {
   );
 }
 
-export default Events;
+export default MyEvents;

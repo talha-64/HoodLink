@@ -10,7 +10,8 @@ import Events from "./pages/Events.jsx";
 import Chat from "./pages/Chat.jsx";
 import Profile from "./pages/Profile.jsx";
 import PostEdit from "./pages/PostEdit.jsx";
-import AllPosts from "./pages/AllPosts.jsx";
+import MyPosts from "./pages/MyPosts.jsx";
+import MyEvents from "./pages/MyEvents.jsx";
 
 import { Toaster } from "@/components/ui/toaster";
 
@@ -36,7 +37,8 @@ function App() {
             <Route path="/feed" element={<Feed />} />
             <Route path="/events" element={<Events />} />
             <Route path="/chats" element={<Chat />} />
-            <Route path="/allposts" element={<AllPosts />} />
+            <Route path="/myposts" element={<MyPosts />} />
+            <Route path="/myevents" element={<MyEvents />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/postedit" element={<PostEdit />} />
           </Route>

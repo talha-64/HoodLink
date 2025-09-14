@@ -224,7 +224,7 @@ function Home() {
                 View All
               </Link>
             </div>
-            <div className="p-6 space-y-4 overflow-y-auto max-h-[530px] scrollbar-thin scrollbar-thumb-gray-700">
+            <div className="p-6 space-y-4 overflow-y-auto max-h-[580px] scrollbar-thin scrollbar-thumb-gray-700">
               {details?.upcomingEvents?.length > 0 ? (
                 details.upcomingEvents.map((event) => (
                   <div

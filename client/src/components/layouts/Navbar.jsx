@@ -8,13 +8,12 @@ import {
   Users,
   Calendar,
   MessageCircle,
-  User,
   File,
   Plus,
   Menu,
   X,
-  Edit,
   LogOut,
+  CalendarHeart,
 } from "lucide-react";
 
 const Navbar = () => {
@@ -30,7 +29,7 @@ const Navbar = () => {
     { name: "Feed", path: "/feed", icon: <Users size={18} /> },
     { name: "Events", path: "/events", icon: <Calendar size={18} /> },
     { name: "Chats", path: "/chats", icon: <MessageCircle size={18} /> },
-    { name: "My Posts", path: "/allposts", icon: <File size={18} /> },
+    { name: "My Posts", path: "/myposts", icon: <File size={18} /> },
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);

@@ -193,6 +193,24 @@ export const userProfile = async (req, res) => {
       [id, neighborhood_id]
     );
 
+    const userEvents = await pool.query(
+      `SELECT 
+    e.id,
+    e.title,
+    e.description,
+    e.event_date,
+    e.created_at,
+    e.location,
+    u.full_name AS organizer,
+    u.profile_pic
+   FROM events e
+   LEFT JOIN users u ON e.user_id = u.id
+   WHERE e.user_id = $1
+   ORDER BY e.event_date ASC
+   LIMIT 3`,
+      [id]
+    );
+
     const userInfo = user.rows[0];
 
     res.status(200).json({
@@ -203,6 +221,7 @@ export const userProfile = async (req, res) => {
       recentEventsCount: recentEvents.rows.length,
       recentCommentsCount: recentComments.rows.length,
       recentPosts: recentPosts.rows,
+      userEvents: userEvents.rows,
     });
   } catch (err) {
     console.log(err.message);
@@ -286,9 +305,13 @@ export const updateProfileInfo = async (req, res) => {
     }
 
     const updatedData = await pool.query(
-      `UPDATE users SET full_name = $1, email = $2, phone = $3, neighborhood_id = (
-        SELECT id FROM neighborhoods WHERE postal_code = $4
-      ) WHERE id = $5 RETURNING full_name, profile_pic`,
+      `UPDATE users SET 
+      full_name = $1, 
+      email = $2, 
+      phone = $3, 
+      neighborhood_id = (SELECT id FROM neighborhoods WHERE postal_code = $4)
+      WHERE id = $5
+      RETURNING full_name, profile_pic, neighborhood_id`,
       [
         full_name.trim(),
         email.toLowerCase().trim(),

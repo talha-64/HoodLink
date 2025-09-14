@@ -44,57 +44,17 @@ export const createEvent = async (req, res) => {
 
     res.status(201).json({
       message: "Event posted successfully",
-      event: eventResult.rows[0],
     });
   } catch (err) {
     console.log("Event create error: " + err.message);
-    res.status(500).json({ Error: "Server Error" });
-  }
-};
-
-export const getEvent = async (req, res) => {
-  const eventId = req.params.eventId;
-  const userNeighborhoodId = req.user.neighborhood_id;
-
-  try {
-    const eventNeighborhoodResult = await pool.query(
-      `SELECT neighborhood_id FROM events WHERE id = $1`,
-      [eventId]
-    );
-
-    if (eventNeighborhoodResult.rows.length === 0) {
-      return res.status(404).json({ message: "Event not found" });
-    }
-
-    if (eventNeighborhoodResult.rows[0].neighborhood_id != userNeighborhoodId) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to view this event" });
-    }
-
-    const eventResult = await pool.query(
-      `SELECT e.title, e.description, e.event_date, e.location, e.created_at, u.full_name, u.profile_pic
-      FROM events e
-      JOIN users u ON e.user_id = u.id
-      WHERE e.id = $1 `,
-      [eventId]
-    );
-
-    if (eventResult.rows.length === 0) {
-      return res.status(400).json({ message: "Event not found" });
-    }
-
-    const event = eventResult.rows[0];
-
-    res.status(200).json({ event });
-  } catch (err) {
-    console.log(err.message);
-    res.status(500).json({ Error: "Server Error" });
+    res.status(500).json({ error: "Server Error" });
   }
 };
 
 export const getAllNeighborhoodEvent = async (req, res) => {
   const neighborhood_id = req.user.neighborhood_id;
+  const filter = req.query.filter;
+  let dateCondition = "";
 
   try {
     const neighborhoodResult = await pool.query(
@@ -106,15 +66,152 @@ export const getAllNeighborhoodEvent = async (req, res) => {
       return res.status(404).json({ message: "Neighborhood not found." });
     }
 
+    if (filter === "thisWeek") {
+      dateCondition =
+        "AND e.event_date >= CURRENT_DATE AND e.event_date < CURRENT_DATE + INTERVAL '7 days'";
+    } else if (filter === "nextWeek") {
+      dateCondition =
+        "AND e.event_date >= CURRENT_DATE + INTERVAL '7 days' AND e.event_date < CURRENT_DATE + INTERVAL '14 days'";
+    }
+
     const eventsResult = await pool.query(
-      `SELECT e.id, e.title, e.description, e.event_date, e.location, e.created_at, e.user_id, e.neighborhood_id, u.full_name, u.profile_pic 
+      `SELECT 
+      e.id, e.title, e.description, e.event_date, e.location, 
+      e.created_at, e.user_id, e.neighborhood_id, 
+      u.full_name AS organizer, u.profile_pic 
       FROM events e
       JOIN users u ON e.user_id = u.id
       WHERE e.neighborhood_id = $1
-      ORDER BY e.event_date ASC`,
+      ${dateCondition}
+      ORDER BY e.event_date ASC
+      `,
       [neighborhood_id]
     );
-    console.log("working");
+
+    const events = eventsResult.rows;
+
+    if (events.length === 0) {
+      return res.status(200).json({ events: [] });
+    }
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.log("Get all events error: " + err.message);
+    res.status(500).json({ Error: "Server Error" });
+  }
+};
+
+export const searchEvent = async (req, res) => {
+  const neighborhood_id = req.user.neighborhood_id;
+  const { q } = req.query;
+
+  try {
+    const neighborhoodResult = await pool.query(
+      "SELECT * FROM neighborhoods WHERE id = $1",
+      [neighborhood_id]
+    );
+
+    if (neighborhoodResult.rows.length === 0) {
+      return res.status(404).json({ message: "Neighborhood not found." });
+    }
+
+    if (!q) {
+      return res.status(400).json({ message: "Missing search query" });
+    }
+
+    const searchQuery = await pool.query(
+      `SELECT e.id, e.title, e.description, e.event_date, e.location, e.created_at, e.user_id, e.neighborhood_id, u.full_name, u.profile_pic FROM events e JOIN users u ON e.user_id = u.id WHERE to_tsvector('english', e.title || ' ' || e.description) @@ plainto_tsquery($1) AND e.neighborhood_id = $2 ORDER BY e.event_date ASC`,
+      [q, neighborhood_id]
+    );
+
+    const events = searchQuery.rows;
+
+    if (events.length === 0) {
+      return res.status(200).json({ events: [] });
+    }
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("Get Search Event error:", err.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const searchMyEvent = async (req, res) => {
+  const neighborhood_id = req.user.neighborhood_id;
+  const userId = req.user.id;
+  const { q } = req.query;
+
+  try {
+    const neighborhoodResult = await pool.query(
+      "SELECT * FROM neighborhoods WHERE id = $1",
+      [neighborhood_id]
+    );
+
+    if (neighborhoodResult.rows.length === 0) {
+      return res.status(404).json({ message: "Neighborhood not found." });
+    }
+
+    if (!q) {
+      return res.status(400).json({ message: "Missing search query" });
+    }
+
+    const searchQuery = await pool.query(
+      `SELECT e.id, e.title, e.description, e.event_date, e.location, e.created_at, e.user_id, e.neighborhood_id, u.full_name, u.profile_pic FROM events e JOIN users u ON e.user_id = u.id WHERE to_tsvector('english', e.title || ' ' || e.description) @@ plainto_tsquery($1) AND e.neighborhood_id = $2 AND e.user_id = $3 ORDER BY e.event_date ASC`,
+      [q, neighborhood_id, userId]
+    );
+
+    const events = searchQuery.rows;
+
+    if (events.length === 0) {
+      return res.status(200).json({ events: [] });
+    }
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("Get Search Event error:", err.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const getMyEvents = async (req, res) => {
+  const neighborhood_id = req.user.neighborhood_id;
+  const userId = req.user.id;
+  const filter = req.query.filter;
+  let dateCondition = "";
+
+  try {
+    const neighborhoodResult = await pool.query(
+      "SELECT * FROM neighborhoods WHERE id = $1",
+      [neighborhood_id]
+    );
+
+    if (neighborhoodResult.rows.length === 0) {
+      return res.status(404).json({ message: "Neighborhood not found." });
+    }
+
+    if (filter === "thisWeek") {
+      dateCondition =
+        "AND e.event_date >= CURRENT_DATE AND e.event_date < CURRENT_DATE + INTERVAL '7 days'";
+    } else if (filter === "nextWeek") {
+      dateCondition =
+        "AND e.event_date >= CURRENT_DATE + INTERVAL '7 days' AND e.event_date < CURRENT_DATE + INTERVAL '14 days'";
+    }
+
+    const eventsResult = await pool.query(
+      `SELECT 
+      e.id, e.title, e.description, e.event_date, e.location, 
+      e.created_at, e.user_id, e.neighborhood_id, 
+      u.full_name AS organizer, u.profile_pic 
+      FROM events e
+      JOIN users u ON e.user_id = u.id
+      WHERE e.neighborhood_id = $1 AND e.user_id = $2
+      ${dateCondition}
+      ORDER BY e.event_date ASC
+      `,
+      [neighborhood_id, userId]
+    );
+
     const events = eventsResult.rows;
 
     if (events.length === 0) {
@@ -150,39 +247,10 @@ export const deleteEvent = async (req, res) => {
 
     await pool.query("DELETE FROM events WHERE id = $1", [eventId]);
 
-    res.status(200).json({ msg: "Event Deleted successfully" });
+    res.status(200).json({ message: "Event Deleted successfully" });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-export const getEventForEdit = async (req, res) => {
-  const userId = req.user.id;
-  const eventId = req.params.eventId;
-
-  try {
-    const eventResult = await pool.query(
-      `SELECT e.*, u.full_name, u.profile_pic FROM events e JOIN users u ON e.user_id = u.id WHERE e.id = $1`,
-      [eventId]
-    );
-
-    if (eventResult.rows.length === 0) {
-      return res.status(404).json({ message: "Event not found" });
-    }
-
-    const event = eventResult.rows[0];
-
-    if (event.user_id !== userId) {
-      return res
-        .status(403)
-        .json({ message: "You don't have permission to edit this event" });
-    }
-
-    return res.status(200).json({ event });
-  } catch (err) {
-    console.log(err.message);
-    res.status(500).json({ Error: "Server Error" });
   }
 };
 
@@ -241,43 +309,80 @@ export const updateEvent = async (req, res) => {
       event: updatedEvent.rows[0],
     });
   } catch (err) {
-    console.error("updateEvent error:", err.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-export const searchEvent = async (req, res) => {
-  const neighborhood_id = req.user.neighborhood_id;
-  const { q } = req.query;
+//----------------------------------------------------------------
+
+//Unused For Now
+
+export const getEvent = async (req, res) => {
+  const eventId = req.params.eventId;
+  const userNeighborhoodId = req.user.neighborhood_id;
 
   try {
-    const neighborhoodResult = await pool.query(
-      "SELECT * FROM neighborhoods WHERE id = $1",
-      [neighborhood_id]
+    const eventNeighborhoodResult = await pool.query(
+      `SELECT neighborhood_id FROM events WHERE id = $1`,
+      [eventId]
     );
 
-    if (neighborhoodResult.rows.length === 0) {
-      return res.status(404).json({ message: "Neighborhood not found." });
+    if (eventNeighborhoodResult.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
     }
 
-    if (!q) {
-      return res.status(400).json({ message: "Missing search query" });
+    if (eventNeighborhoodResult.rows[0].neighborhood_id != userNeighborhoodId) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to view this event" });
     }
 
-    const searchQuery = await pool.query(
-      `SELECT e.id, e.title, e.description, e.event_date, e.location, e.created_at, e.user_id, e.neighborhood_id, u.full_name, u.profile_pic FROM events e JOIN users u ON e.user_id = u.id WHERE to_tsvector('english', e.title || ' ' || e.description) @@ plainto_tsquery($1) AND e.neighborhood_id = $2 ORDER BY e.event_date DESC`,
-      [q, neighborhood_id]
+    const eventResult = await pool.query(
+      `SELECT e.title, e.description, e.event_date, e.location, e.created_at, u.full_name AS organizer, u.profile_pic
+      FROM events e
+      JOIN users u ON e.user_id = u.id
+      WHERE e.id = $1 `,
+      [eventId]
     );
 
-    const events = searchQuery.rows;
-
-    if (events.length === 0) {
-      return res.status(200).json({ events: [] });
+    if (eventResult.rows.length === 0) {
+      return res.status(400).json({ message: "Event not found" });
     }
 
-    res.status(200).json({ events });
+    const event = eventResult.rows[0];
+    console.log(event);
+    res.status(200).json({ event });
   } catch (err) {
-    console.error("Get Search Event error:", err.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.log(err.message);
+    res.status(500).json({ Error: "Server Error" });
+  }
+};
+
+export const getEventForEdit = async (req, res) => {
+  const userId = req.user.id;
+  const eventId = req.params.eventId;
+
+  try {
+    const eventResult = await pool.query(
+      `SELECT e.*, u.full_name, u.profile_pic FROM events e JOIN users u ON e.user_id = u.id WHERE e.id = $1`,
+      [eventId]
+    );
+
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const event = eventResult.rows[0];
+
+    if (event.user_id !== userId) {
+      return res
+        .status(403)
+        .json({ message: "You don't have permission to edit this event" });
+    }
+
+    return res.status(200).json({ event });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ error: "Server Error" });
   }
 };

@@ -1,10 +1,10 @@
 import React from "react";
 
-function AllPosts() {
-  return <div>AllPosts</div>;
+function MyPosts() {
+  return <div>MyPosts</div>;
 }
 
-export default AllPosts;
+export default MyPosts;
 // import { useState } from "react";
 // import { Image, MapPin, Users } from "lucide-react";
 // import { Button } from "./button";

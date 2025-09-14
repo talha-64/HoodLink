@@ -22,7 +22,6 @@ function CompactPostCard({ post }) {
       .join(" ");
   };
 
-  // ✅ Relative time formatter
   const timeAgo = (dateString) => {
     if (!dateString) return "No Date";
     const date = new Date(dateString);
@@ -65,15 +64,16 @@ function CompactPostCard({ post }) {
           const newHeight = contentRef.current.scrollHeight;
           expandedHeightRef.current = newHeight;
           setHeight(`${newHeight}px`);
-          setTimeout(() => setIsTransitioning(false), 700);
+
+          setTimeout(() => {
+            setHeight("auto"); // 🔧 Let it grow naturally after transition
+            setIsTransitioning(false);
+          }, 700);
         }
       });
     } else {
       setIsTransitioning(true);
-
-      if (expandedHeightRef.current) {
-        setHeight(`${expandedHeightRef.current}px`);
-      }
+      setHeight(`${expandedHeightRef.current}px`);
 
       requestAnimationFrame(() => {
         setTimeout(() => {
@@ -90,7 +90,9 @@ function CompactPostCard({ post }) {
 
   return (
     <div
-      className="shadow-sm transition-all duration-700 ease-in-out overflow-hidden"
+      className={`shadow-sm transition-all duration-700 ease-in-out ${
+        height !== "auto" ? "overflow-hidden" : ""
+      }`}
       style={{ height }}
     >
       <div
@@ -100,9 +102,7 @@ function CompactPostCard({ post }) {
         }`}
       >
         {expanded || (isTransitioning && !expanded) ? (
-          // ---------------- EXPANDED VIEW ----------------
           <div className="space-y-3">
-            {/* Header Row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-neutral-700">
@@ -122,7 +122,6 @@ function CompactPostCard({ post }) {
                   <p className="text-sm font-medium text-white">
                     {post?.author || "Not available"}
                   </p>
-                  {/* ✅ Show relative created_at */}
                   <p className="text-[11px] text-neutral-500">
                     {timeAgo(post?.created_at)}
                   </p>
@@ -221,7 +220,7 @@ function CompactPostCard({ post }) {
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-medium text-white bg-zinc-800 px-2 py-0.5 rounded-md">
+                <span className="text-xs font-medium text-blue-300 bg-blue-900/40 px-3 py-1 rounded-lg border border-blue-700 shadow-sm">
                   {formatCategory(post?.category)}
                 </span>
               </div>

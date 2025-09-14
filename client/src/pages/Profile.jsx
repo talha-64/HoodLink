@@ -8,7 +8,7 @@ import { CalendarDays, Edit, Lock, Trash2 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 
-import CompactPostCard from "@/components/posts/CompactPostCard";
+import EventCard from "@/components/events/EventCard";
 
 import EditProfileModal from "@/components/ui/EditProfileModal";
 import DeleteAccountModal from "@/components/ui/DeleteAccountModal.jsx";
@@ -42,6 +42,17 @@ function Profile() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      const updatedUser = res.data.user;
+
+      if (updatedUser.neighborhood_id !== profile.user.neighborhood_id) {
+        // Force logout immediately
+        logout();
+        // Optionally redirect to login page
+        window.location.href = "/";
+        return;
+      }
+
       updateUser({
         full_name: res.data.user.full_name,
         profile_pic: res.data.user.profile_pic,
@@ -307,44 +318,30 @@ function Profile() {
           {/* Recent Posts */}
           <div className="lg:col-span-2 space-y-6 bg-gray-800 rounded-2xl p-6 shadow-md border border-gray-700">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-white">Recent Posts</h3>
+              <h3 className="font-bold text-white">My recent events</h3>
               <Link
-                to={"/allposts"}
+                to={"/myevents"}
                 className="text-blue-400 hover:text-blue-500 text-sm"
               >
                 View All
               </Link>
             </div>
             <div className="space-y-4 overflow-y-auto max-h-[550px] scrollbar-thin scrollbar-thumb-gray-700">
-              {profile?.recentPosts?.length > 0 ? (
-                profile.recentPosts.slice(0, 3).map((post) => (
+              {profile?.userEvents?.length > 0 ? (
+                profile.userEvents.map((event) => (
                   <div
-                    key={post.id}
-                    className="bg-gray-900 rounded-xl p-3 shadow border border-gray-700"
+                    key={event.id}
+                    className="bg-gray-900 rounded-xl p-4 shadow border border-gray-700"
                   >
-                    <CompactPostCard post={post} />
+                    <EventCard event={event} />
                   </div>
                 ))
               ) : (
                 <div className="text-center py-12 text-gray-400">
-                  No recent posts
+                  No upcoming events
                 </div>
               )}
             </div>
-            {/* {profile?.recentPosts && profile.recentPosts.length > 0 ? (
-              profile.recentPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-gray-900 rounded-xl p-4 shadow-[0_0_10px_rgba(255,255,255,0.06)] border border-gray-700"
-                >
-                  <CompactPostCard post={post} />
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-400">
-                No recent posts
-              </div>
-            )} */}
           </div>
 
           {/* Sidebar */}
