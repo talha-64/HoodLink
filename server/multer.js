@@ -56,8 +56,6 @@ const postStorage = multer.diskStorage({
 
     const customName = "user-" + userId + "-" + Date.now() + ext;
 
-    console.log(customName);
-
     cb(null, customName);
   },
 });
