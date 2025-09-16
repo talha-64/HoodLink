@@ -74,7 +74,7 @@ export const getCommentsForPost = async (req, res) => {
     }
 
     const commentsResults = await pool.query(
-      `SELECT c.id, c.content, u.full_name, u.profile_pic, updated_at FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = $1`,
+      `SELECT c.id, c.content, u.full_name, u.profile_pic, u.id AS user_id, updated_at FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = $1 ORDER BY c.created_at DESC`,
       [postId]
     );
 
@@ -82,7 +82,10 @@ export const getCommentsForPost = async (req, res) => {
       return res.status(200).json({ comments: [] });
     }
 
-    return res.status(200).json({ comments: commentsResults.rows });
+    return res.status(200).json({
+      message: "Comment posted successfully",
+      comments: commentsResults.rows,
+    });
   } catch (err) {
     console.error("Create Comment error:", err.message);
 
@@ -111,7 +114,7 @@ export const deleteComment = async (req, res) => {
 
     await pool.query("DELETE FROM comments WHERE id = $1", [commentId]);
 
-    res.status(200).json({ msg: "Comment Deleted successfully" });
+    res.status(200).json({ message: "Comment Deleted successfully" });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ error: "Internal Server Error" });

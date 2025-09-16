@@ -1,14 +1,16 @@
 /* eslint-disable no-unused-vars */
 import { React, useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { Trash, Pencil } from "lucide-react";
+import { Trash, Pencil, Plus, MessageCircle } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
   Carousel,
@@ -18,12 +20,16 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import EditPostForm from "./EditPostForm";
+import CommentCard from "../comments/CommentCard";
 
 function PostCard({ post, allowControls, onReload }) {
   const { toast } = useToast();
   const { token, logout } = useAuth();
+  const [postId, setPostId] = useState(post.id);
+  const [commentCount, setCommentCount] = useState(post.comment_count);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [comments, setComments] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -31,6 +37,7 @@ function PostCard({ post, allowControls, onReload }) {
     existingImages: post?.images || [],
     images: [],
   });
+  const [newComment, setNewComment] = useState("");
 
   const formatCategory = (category) => {
     if (!category) return "No Category";
@@ -168,10 +175,104 @@ function PostCard({ post, allowControls, onReload }) {
     }
   };
 
+  //fetch comments
+
+  const handleAccordionChange = async (value) => {
+    if (value === `post-${post.id}`) {
+      fetchComments(post.id);
+    }
+  };
+
+  const triggerReload = () => {
+    fetchComments(postId);
+  };
+
+  const fetchComments = async (id) => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/post/${id}/comments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setComments(res.data.comments);
+    } catch (err) {
+      if (err?.response?.status === 401) {
+        logout();
+      } else {
+        const message =
+          err?.response?.data?.error || err.message || "Something went wrong.";
+        setError(message);
+        toast({
+          variant: "destructive",
+          title: message,
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
+          duration: 3000,
+        });
+      }
+    }
+  };
+
+  const handleCommentChange = (e, value) => {
+    e.preventDefault();
+    const content = e.target.value;
+    setNewComment(content);
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/post/${postId}/comments`,
+        { content: newComment },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast({
+        title: res.data.message,
+        duration: 3000,
+      });
+      setNewComment("");
+      setCommentCount((prev) => parseInt(prev) + 1);
+      fetchComments(post.id);
+    } catch (err) {
+      if (err?.status === 401) {
+        logout();
+      } else {
+        if (err && err) {
+          setError(err.data.error || err.message);
+          toast({
+            variant: "destructive",
+            title: err.data.error || err.message,
+            action: <ToastAction altText="Try again">Try again</ToastAction>,
+            duration: 3000,
+          });
+        } else {
+          setError("Something went wrong. Please try again.");
+        }
+      }
+    }
+  };
+
+  // getting user if for comment controls
+
+  const getUserIdFromToken = (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      return decoded.id || decoded.user_id;
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      return null;
+    }
+  };
+
+  const userId = getUserIdFromToken(token);
+
   const hasImages = post?.images && post.images.length > 0;
 
   return (
-    <div className="space-y-3 rounded-lg p-3 bg-gray-900" key={post?.id}>
+    <div className="space-y-3 rounded-lg p-1 bg-gray-900" key={post?.id}>
       {/* Header Row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -257,12 +358,66 @@ function PostCard({ post, allowControls, onReload }) {
         </p>
       )}
 
-      {/* Footer */}
-      <div className="flex items-center text-xs text-neutral-500 space-x-4">
-        <button className="flex items-center space-x-1 hover:text-white transition-colors">
-          <span>💬</span>
-          <span>{post?.comment_count || 0}</span>
-        </button>
+      <div className="flex w-full">
+        <Accordion
+          type="single"
+          collapsible
+          onValueChange={(value) => handleAccordionChange(value)}
+          className="w-full"
+        >
+          <AccordionItem value={`post-${post.id}`}>
+            {/* Custom trigger styling to remove default chevron */}
+            <AccordionTrigger className="w-full px-4 rounded-lg bg-gray-800 hover:bg-gray-800 transition flex items-center justify-between p-1 [&>svg]:hidden no-underline hover:no-underline focus:no-underline">
+              <div className="flex items-center gap-3 p-0">
+                <span className="flex items-center gap-2 text-lg font-medium text-gray-200 bg-gray-900 rounded-md p-2">
+                  <MessageCircle size={22} /> {commentCount || 0}
+                </span>
+                <span className="text-md font-semibold text-gray-100">
+                  Create or View comment
+                </span>
+              </div>
+              <div>
+                <Plus size={35} className="mr-1" />
+              </div>
+            </AccordionTrigger>
+
+            <AccordionContent className="mt-3 px-0 text-sm text-gray-300">
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => handleCommentSubmit(e)}
+              >
+                <input
+                  type="text"
+                  id="title"
+                  name="content"
+                  value={newComment}
+                  onChange={handleCommentChange}
+                  required
+                  className="w-full px-3 py-2 rounded bg-gray-900 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Type your comment ....."
+                />
+                <button
+                  type="submit"
+                  className="w-1/3 md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold md:py-2 px-4 rounded transition"
+                >
+                  Post
+                </button>
+              </form>
+              <div className="mt-4 max-h-52 overflow-scroll scrollbar-none">
+                {comments?.length > 0
+                  ? comments.map((comment) => (
+                      <CommentCard
+                        key={comment.id}
+                        comment={comment}
+                        allowControls={comment.user_id == userId ? true : false}
+                        onReload={triggerReload}
+                      />
+                    ))
+                  : "No comments to show"}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       {/* Edit Form Accordion */}

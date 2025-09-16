@@ -210,9 +210,19 @@ export const getAllNeighborhoodPosts = async (req, res) => {
     }
 
     const postsResult = await pool.query(
-      `SELECT p.id, p.title, p.content, p.category, p.created_at, p.user_id, p.neighborhood_id, u.full_name AS author, u.profile_pic FROM posts p JOIN users u ON p.user_id = u.id WHERE p.neighborhood_id = $1 ${
+      `SELECT p.id, p.title, p.content, p.category, p.created_at, p.user_id, p.neighborhood_id, u.full_name AS author, u.profile_pic, COUNT(c.id) AS comment_count FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN comments c ON p.id = c.post_id WHERE p.neighborhood_id = $1 ${
         categoryCondition ? categoryCondition : ""
-      } ORDER BY p.created_at DESC`,
+      }GROUP BY 
+      p.id, 
+      p.title, 
+      p.content, 
+      p.category, 
+      p.created_at, 
+      p.user_id, 
+      p.neighborhood_id, 
+      u.full_name, 
+      u.profile_pic
+      ORDER BY p.created_at DESC`,
       [neighborhood_id]
     );
 
@@ -279,9 +289,20 @@ export const getMyPosts = async (req, res) => {
     }
 
     const postsResult = await pool.query(
-      `SELECT p.id, p.title, p.content, p.category, p.created_at, p.user_id, p.neighborhood_id, u.full_name AS author, u.profile_pic FROM posts p JOIN users u ON p.user_id = u.id WHERE p.neighborhood_id = $1 AND p.user_id = $2 ${
+      `SELECT p.id, p.title, p.content, p.category, p.created_at, p.user_id, p.neighborhood_id, u.full_name AS author, u.profile_pic, COUNT(c.id) AS comment_count FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN comments c ON p.id = c.post_id WHERE p.neighborhood_id = $1 AND p.user_id = $2 ${
         categoryCondition ? categoryCondition : ""
-      } ORDER BY p.created_at DESC`,
+      }GROUP BY 
+      p.id, 
+      p.title, 
+      p.content, 
+      p.category, 
+      p.created_at, 
+      p.user_id, 
+      p.neighborhood_id, 
+      u.id,
+      u.full_name, 
+      u.profile_pic
+      ORDER BY p.created_at DESC`,
       [neighborhood_id, userId]
     );
 
