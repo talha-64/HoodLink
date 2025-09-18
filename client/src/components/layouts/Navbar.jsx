@@ -65,9 +65,12 @@ const Navbar = () => {
 
       {/* Right Side Buttons */}
       <div className="hidden md:flex items-center space-x-4">
-        <button className="flex items-center space-x-1 px-3 py-1 rounded-md text-sm border border-neutral-700 bg-neutral-800/70 hover:bg-neutral-700 hover:shadow-[0_0_8px_rgba(255,255,255,0.15)] transition">
+        <Link
+          to={"/feed"}
+          className="flex items-center space-x-1 px-3 py-1 rounded-md text-sm border border-neutral-700 bg-neutral-800/70 hover:bg-neutral-700 hover:shadow-[0_0_8px_rgba(255,255,255,0.15)] transition"
+        >
           <Plus size={18} className="text-blue-400" />
-        </button>
+        </Link>
 
         {/* User Profile Section (Desktop) */}
         <Link
