@@ -81,7 +81,16 @@ export const getMessages = async (req, res) => {
     }
 
     const messagesResult = await pool.query(
-      `SELECT * FROM messages WHERE conversation_id=$1 ORDER BY created_at ASC LIMIT $2 OFFSET $3`,
+      `
+      SELECT * FROM (
+        SELECT * 
+        FROM messages
+        WHERE conversation_id=$1
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+      ) sub
+      ORDER BY created_at ASC
+      `,
       [conversationId, limit, offset]
     );
 
@@ -96,7 +105,7 @@ export const listConversations = async (req, res) => {
   const userId = req.user.id;
   try {
     const convResult = await pool.query(
-      `SELECT c.*, u1.full_name AS user1_name, u2.full_name AS user2_name,
+      `SELECT c.*, u1.full_name AS user1_name, u1.profile_pic AS u1_pic , u2.full_name AS user2_name, u2.profile_pic AS u2_pic,
         (SELECT message_text FROM messages m WHERE m.conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message
        FROM conversations c
        JOIN users u1 ON u1.id = c.user1_id

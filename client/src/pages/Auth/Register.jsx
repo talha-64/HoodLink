@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 import axios from "axios";
 import {
@@ -18,6 +18,7 @@ import { ToastAction } from "@/components/ui/toast";
 
 function Register() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [full_name, setFull_name] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -25,7 +26,7 @@ function Register() {
   const [avatar, setAvatar] = useState(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { toast } = useToast();
+  const [neighborhoods, setNeighborhoods] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,6 +65,20 @@ function Register() {
       }
     }
   };
+
+  useEffect(() => {
+    const getNeighborhoods = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/neighborhood/getAllNeighborhoods`
+        );
+        setNeighborhoods(res.data.neighborhoods);
+      } catch (err) {
+        setError(err.message || "Something went wrong");
+      }
+    };
+    getNeighborhoods();
+  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
@@ -137,7 +152,7 @@ function Register() {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            {/* <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="postal_code"
                 className="text-sm font-medium text-neutral-300"
@@ -154,6 +169,29 @@ function Register() {
                 onChange={(e) => setPostal_code(e.target.value)}
                 className="bg-gray-900 text-white border-neutral-700 focus:border-neutral-500 focus:ring-0 rounded-lg"
               />
+            </div> */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="postal_code"
+                className="text-sm font-medium text-neutral-300"
+              >
+                Neighborhood
+              </label>
+              <select
+                required
+                id="postal_code"
+                name="postal_code"
+                value={postal_code}
+                onChange={(e) => setPostal_code(e.target.value)}
+                className="bg-gray-900 text-white border-neutral-700 focus:border-neutral-500 focus:ring-0 rounded-lg px-3 py-2"
+              >
+                <option value="">Select your neighborhood</option>
+                {neighborhoods.map((n) => (
+                  <option key={n.postal_code} value={n.postal_code}>
+                    {n.name}, {n.city}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex flex-col gap-1.5">

@@ -9,7 +9,6 @@ import Feed from "./pages/Feed.jsx";
 import Events from "./pages/Events.jsx";
 import Chat from "./pages/Chat.jsx";
 import Profile from "./pages/Profile.jsx";
-import PostEdit from "./pages/PostEdit.jsx";
 import MyPosts from "./pages/MyPosts.jsx";
 import MyEvents from "./pages/MyEvents.jsx";
 
@@ -40,7 +39,6 @@ function App() {
             <Route path="/myposts" element={<MyPosts />} />
             <Route path="/myevents" element={<MyEvents />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/postedit" element={<PostEdit />} />
           </Route>
         </Route>
       </Routes>

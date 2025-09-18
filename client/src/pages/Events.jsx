@@ -66,6 +66,7 @@ function Events() {
     } catch (err) {
       if (err.response?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err.response && err.response.data) {
           setError(err.response.data.error || err.response.data.message);
@@ -102,6 +103,7 @@ function Events() {
     } catch (err) {
       if (err.response?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err.response && err.response.data) {
           setError(err.response.data.error || err.response.data.message);

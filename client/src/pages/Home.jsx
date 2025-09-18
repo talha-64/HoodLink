@@ -30,8 +30,10 @@ function Home() {
         );
         setDetails(res.data);
       } catch (err) {
-        if (err.response?.status === 401) logout();
-        else setError(err.message || "Something went wrong");
+        if (err.response?.status === 401) {
+          logout();
+          window.location.href = "/";
+        } else setError(err.message || "Something went wrong");
       } finally {
         setIsLoading(false);
       }

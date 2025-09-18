@@ -9,26 +9,34 @@ import { CalendarDays, Edit, Lock, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 import EventCard from "@/components/events/EventCard";
-
 import EditProfileModal from "@/components/ui/EditProfileModal";
 import DeleteAccountModal from "@/components/ui/DeleteAccountModal.jsx";
 import UpdatePasswordModal from "@/components/ui/UpdatePasswordModal.jsx";
 
 import { useToast } from "@/hooks/use-toast";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ToastAction } from "@/components/ui/toast";
+
+import { MessageCircle } from "lucide-react";
 
 function Profile() {
+  const { toast } = useToast();
+  const { token, updateUser, logout } = useAuth();
   const [profile, setProfile] = useState({});
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
-  const { token, updateUser } = useAuth();
   const [activeModal, setActiveModal] = useState(null);
+
   const [neighbors, setNeighbors] = useState([]);
   const [neighborsError, setNeighborsError] = useState("");
-  const { logout } = useAuth();
   const fileInputRef = React.useRef(null);
-
-  const { toast } = useToast();
+  const [newMessage, setNewMessage] = useState("");
 
   const openModal = (modalName) => setActiveModal(modalName);
   const closeModal = () => setActiveModal(null);
@@ -137,6 +145,36 @@ function Profile() {
       });
     } catch (err) {
       // console
+    }
+  };
+
+  const sendMessage = async (neighborId) => {
+    if (!newMessage.trim()) return;
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/chat/send`,
+        { receiverId: neighborId, messageText: newMessage },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setNewMessage("");
+    } catch (err) {
+      if (err.response?.status === 401) {
+        logout();
+      } else {
+        if (err.response && err.response.data) {
+          setError(err.response.data.error || err.response.data.message);
+          toast({
+            variant: "destructive",
+            title: err.response.data.error || err.response.data.message,
+            action: <ToastAction altText="Try again">Try again</ToastAction>,
+            duration: 3000,
+          });
+        } else {
+          setError("Something went wrong. Please try again.");
+        }
+      }
     }
   };
 
@@ -391,32 +429,68 @@ function Profile() {
             </div>
 
             {/* Neighbors */}
-            <div className="bg-gray-800 rounded-2xl p-6 shadow-md border border-gray-700">
+            <div className="bg-gray-900 rounded-2xl p-6 shadow-md border border-gray-700">
               <h3 className="font-bold text-white mb-4">Neighbors</h3>
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
                 {neighbors && neighbors.length > 0 ? (
                   neighbors.map((neighbor) => (
-                    <div
+                    <Accordion
                       key={neighbor.id}
-                      className="flex items-center space-x-4 border border-gray-700 bg-gray-900 rounded-lg p-3 shadow-sm hover:shadow-md transition-all"
+                      className="bg-gray-900 transition rounded-xl shadow-md border border-gray-700"
+                      type="single"
+                      collapsible
                     >
-                      <img
-                        src={
-                          neighbor.profile_pic
-                            ? `${import.meta.env.VITE_API_URL}${
+                      <AccordionItem value="item-1">
+                        <AccordionTrigger className="w-full p-2 hover:bg-gray-800 rounded-lg flex items-center justify-between">
+                          {/* Left side: Profile info */}
+                          <div className="flex items-center space-x-3 w-full">
+                            <img
+                              src={
                                 neighbor.profile_pic
-                              }`
-                            : `/uploads/profile_pictures/default-avatar.webp`
-                        }
-                        alt="Profile"
-                        className="w-10 h-10 rounded-full border border-gray-600 object-cover"
-                      />
-                      <div>
-                        <div className="text-white text-sm font-medium">
-                          {neighbor.full_name || "User"}
-                        </div>
-                      </div>
-                    </div>
+                                  ? `${import.meta.env.VITE_API_URL}${
+                                      neighbor.profile_pic
+                                    }`
+                                  : `/uploads/profile_pictures/default-avatar.webp`
+                              }
+                              alt="Profile"
+                              className="w-8 h-8 rounded-full border border-gray-600 object-cover"
+                            />
+                            <div className="text-white text-sm font-medium truncate">
+                              {neighbor.full_name || "User"}
+                            </div>
+                          </div>
+
+                          <MessageCircle className="w-5 h-5 text-gray-400 group-hover:text-blue-500 " />
+                        </AccordionTrigger>
+
+                        <AccordionContent>
+                          <div>
+                            <label
+                              htmlFor="message"
+                              className="block text-gray-300 mb-1 text-sm"
+                            >
+                              Message
+                            </label>
+                            <input
+                              type="text"
+                              id="message"
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              required
+                              className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                              placeholder="Event your message"
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            onClick={() => sendMessage(neighbor.id)}
+                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition text-sm"
+                          >
+                            Send
+                          </button>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   ))
                 ) : (
                   <div className="text-gray-400 text-sm">

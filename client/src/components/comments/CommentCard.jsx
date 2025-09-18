@@ -76,6 +76,7 @@ function CommentCard({ comment, allowControls, onReload }) {
     } catch (err) {
       if (err?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err && err) {
           setError(err.data.error || err.message);

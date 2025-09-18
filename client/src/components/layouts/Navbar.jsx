@@ -132,10 +132,13 @@ const Navbar = () => {
             ))}
             <hr className="border-neutral-700" />
 
-            <button className="flex items-center space-x-2 py-2 px-3 rounded-md text-sm bg-neutral-800/70 hover:bg-neutral-700 hover:shadow-[0_0_8px_rgba(255,255,255,0.15)] transition">
+            <Link
+              to={"/feed"}
+              className="flex items-center space-x-2 py-2 px-3 rounded-md text-sm bg-neutral-800/70 hover:bg-neutral-700 hover:shadow-[0_0_8px_rgba(255,255,255,0.15)] transition"
+            >
               <Plus size={18} className="text-blue-400" />
               <span>Create Post</span>
-            </button>
+            </Link>
 
             <Link
               to="/profile"

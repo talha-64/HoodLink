@@ -6,6 +6,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Link } from "react-router-dom";
 
 function CompactPostCard({ post }) {
   const [expanded, setExpanded] = useState(false);
@@ -244,10 +245,10 @@ function CompactPostCard({ post }) {
         <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1">
           <button className="flex items-center space-x-1 hover:text-white transition-colors">
             <span>💬</span>
-            <span>
+            <Link to={"/feed"}>
               {(post?.comment_count ?? 0) + " "}
               {post?.comment_count > 1 ? "Comments" : "Comment"}
-            </span>
+            </Link>
           </button>
 
           <button

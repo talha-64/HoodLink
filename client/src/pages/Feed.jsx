@@ -17,7 +17,7 @@ import { ToastAction } from "@/components/ui/toast";
 import { Link } from "react-router-dom";
 import PostCard from "@/components/posts/PostCard";
 
-function Events() {
+function Feed() {
   const { toast } = useToast();
   const { token, logout } = useAuth();
   const [posts, setPosts] = useState([]);
@@ -67,6 +67,7 @@ function Events() {
     } catch (err) {
       if (err.response?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err.response && err.response.data) {
           setError(err.response.data.error || err.response.message);
@@ -85,7 +86,7 @@ function Events() {
     }
   };
 
-  // Fetching Events logic
+  // Fetching posts logic
 
   const getPosts = async (filter = "") => {
     setIsLoading(true);
@@ -103,6 +104,7 @@ function Events() {
     } catch (err) {
       if (err.response?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err.response && err.response.data) {
           setError(err.response.data.error || err.response.data.message);
@@ -248,7 +250,7 @@ function Events() {
             <div className="flex items-center gap-2 w-full md:w-auto">
               <input
                 type="text"
-                placeholder="Search events..."
+                placeholder="Search posts..."
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -383,7 +385,7 @@ function Events() {
         </div>
       </div>
 
-      {/* Events Section (min screen height, responsive grid) */}
+      {/* Feed Section (min screen height, responsive grid) */}
       <div className="max-w-5xl mx-auto min-h-[calc(100vh-220px)]">
         {/* Adjust offset if needed */}
         <div className="bg-gray-800 rounded-2xl p-6 shadow-md border border-gray-700">
@@ -433,7 +435,7 @@ function Events() {
 
             {/* Tab Content Wrapper */}
             <div className="w-full">
-              {/* All Events Tab */}
+              {/* All Feed Tab */}
               <TabsContent value="all">
                 {posts?.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -519,4 +521,4 @@ function Events() {
   );
 }
 
-export default Events;
+export default Feed;

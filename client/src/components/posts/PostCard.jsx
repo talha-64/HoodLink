@@ -95,6 +95,7 @@ function PostCard({ post, allowControls, onReload }) {
     } catch (err) {
       if (err?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err && err) {
           setError(err.data.error || err.message);
@@ -163,6 +164,7 @@ function PostCard({ post, allowControls, onReload }) {
     } catch (err) {
       if (err?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         setError(err.response?.data?.error || err.message);
         toast({
@@ -199,6 +201,7 @@ function PostCard({ post, allowControls, onReload }) {
     } catch (err) {
       if (err?.response?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         const message =
           err?.response?.data?.error || err.message || "Something went wrong.";
@@ -239,6 +242,7 @@ function PostCard({ post, allowControls, onReload }) {
     } catch (err) {
       if (err?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err && err) {
           setError(err.data.error || err.message);

@@ -69,6 +69,7 @@ function Events() {
     } catch (err) {
       if (err.response?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err.response && err.response.data) {
           setError(err.response.data.error || err.response.message);
@@ -87,7 +88,7 @@ function Events() {
     }
   };
 
-  // Fetching Events logic
+  // Fetching posts logic
 
   const getPosts = async (filter = "") => {
     setIsLoading(true);
@@ -105,6 +106,7 @@ function Events() {
     } catch (err) {
       if (err.response?.status === 401) {
         logout();
+        window.location.href = "/";
       } else {
         if (err.response && err.response.data) {
           setError(err.response.data.error || err.response.data.message);
@@ -240,11 +242,9 @@ function Events() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
             {/* Title & Subtitle */}
             <div>
-              <h1 className="text-2xl font-bold text-white mb-1">
-                Neighborhood Posts
-              </h1>
+              <h1 className="text-2xl font-bold text-white mb-1">My Posts</h1>
               <p className="text-md text-gray-400">
-                Stay connected with your neighborhood
+                View and manage your posts
               </p>
             </div>
 
@@ -252,7 +252,7 @@ function Events() {
             <div className="flex items-center gap-2 w-full md:w-auto">
               <input
                 type="text"
-                placeholder="Search events..."
+                placeholder="Search posts..."
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -387,7 +387,7 @@ function Events() {
         </div>
       </div>
 
-      {/* Events Section (min screen height, responsive grid) */}
+      {/* posts Section (min screen height, responsive grid) */}
       <div className="max-w-5xl mx-auto min-h-[calc(100vh-220px)]">
         {/* Adjust offset if needed */}
         <div className="bg-gray-800 rounded-2xl p-6 shadow-md border border-gray-700">
@@ -437,7 +437,7 @@ function Events() {
 
             {/* Tab Content Wrapper */}
             <div className="w-full">
-              {/* All Events Tab */}
+              {/* All posts Tab */}
               <TabsContent value="all">
                 {posts?.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
