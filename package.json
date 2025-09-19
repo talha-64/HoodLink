@@ -2,9 +2,10 @@
   "name": "hoodlink",
   "version": "1.0.0",
   "description": "A hyperlocal community platform built with React, Express, and PostgreSQL.",
-  "main": "index.js",
+  "main": "server/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server/index.js"
   },
   "keywords": [],
   "author": "",
