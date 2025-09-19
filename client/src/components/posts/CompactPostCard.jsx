@@ -109,7 +109,7 @@ function CompactPostCard({ post }) {
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-neutral-700">
                   {post?.profile_pic ? (
                     <img
-                      src={`${import.meta.env.VITE_API_URL}${post.profile_pic}`}
+                      src={`${post.profile_pic}`}
                       alt="User Avatar"
                       className="w-full h-full object-cover"
                     />
@@ -142,7 +142,7 @@ function CompactPostCard({ post }) {
                       {post.images.map((image, idx) => (
                         <CarouselItem key={idx}>
                           <img
-                            src={`${import.meta.env.VITE_API_URL}${image}`}
+                            src={`${image}`}
                             alt={`Post image ${idx + 1}`}
                             className="w-full max-h-80 min-h-64 object-cover rounded-lg border border-neutral-700"
                           />
@@ -154,7 +154,7 @@ function CompactPostCard({ post }) {
                   </Carousel>
                 ) : (
                   <img
-                    src={`${import.meta.env.VITE_API_URL}${post.images[0]}`}
+                    src={`${post.images[0]}`}
                     alt="Post"
                     className="w-full max-h-80 min-h-64 object-cover rounded-lg border border-neutral-700"
                   />
@@ -181,7 +181,7 @@ function CompactPostCard({ post }) {
             <div className="w-24 h-24 rounded-md overflow-hidden border border-neutral-700 flex-shrink-0">
               {hasImages ? (
                 <img
-                  src={`${import.meta.env.VITE_API_URL}${post.images[0]}`}
+                  src={`${post.images[0]}`}
                   alt="Thumbnail"
                   className="w-full h-full object-cover"
                 />
@@ -199,9 +199,7 @@ function CompactPostCard({ post }) {
                   <div className="w-7 h-7 rounded-full overflow-hidden border border-neutral-700">
                     {post?.profile_pic ? (
                       <img
-                        src={`${import.meta.env.VITE_API_URL}${
-                          post.profile_pic
-                        }`}
+                        src={`${post.profile_pic}`}
                         alt="User Avatar"
                         className="w-full h-full object-cover"
                       />

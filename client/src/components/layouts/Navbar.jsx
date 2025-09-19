@@ -84,10 +84,8 @@ const Navbar = () => {
           <img
             src={
               user && user.profile_pic
-                ? `${import.meta.env.VITE_API_URL}${user.profile_pic}`
-                : `${
-                    import.meta.env.VITE_API_URL
-                  }/uploads/profile_pictures/default-avatar.webp`
+                ? `${user.profile_pic}`
+                : `https://res.cloudinary.com/davv7aqu8/image/upload/v1758261581/default-avatar_o4el6u.webp`
             }
             alt="User Avatar"
             className="w-9 h-9 rounded-lg border border-neutral-700 shadow-[0_0_6px_rgba(255,255,255,0.1)]"
@@ -155,7 +153,7 @@ const Navbar = () => {
               <img
                 src={
                   user && user.profile_pic
-                    ? `${import.meta.env.VITE_API_URL}${user.profile_pic}`
+                    ? `${user.profile_pic}`
                     : `${
                         import.meta.env.VITE_API_URL
                       }/uploads/profile_pictures/default-avatar.webp`

@@ -163,7 +163,7 @@ function EventCard({ event, allowControls, onReload }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img
-            src={`${import.meta.env.VITE_API_URL}${event?.profile_pic}`}
+            src={`${event?.profile_pic}`}
             alt="Organizer Avatar"
             className="w-12 h-12 rounded-full border border-neutral-700 shadow-[0_0_6px_rgba(255,255,255,0.15)] object-cover"
           />

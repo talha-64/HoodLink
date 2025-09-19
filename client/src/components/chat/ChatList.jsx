@@ -74,7 +74,7 @@ function ChatList({ conversation, onSelect, isActive }) {
       <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-semibold mr-3">
         {conversation?.u1_pic || conversation?.u2_pic ? (
           <img
-            src={`${import.meta.env.VITE_API_URL}${otherUserPic}`}
+            src={`${otherUserPic}`}
             alt="User Avatar"
             className="w-full h-full object-cover rounded-full"
           />

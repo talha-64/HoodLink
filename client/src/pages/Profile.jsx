@@ -250,9 +250,7 @@ function Profile() {
               <img
                 src={
                   profile?.user?.profile_pic
-                    ? `${import.meta.env.VITE_API_URL}${
-                        profile.user.profile_pic
-                      }`
+                    ? `${profile.user.profile_pic}`
                     : `${
                         import.meta.env.VITE_API_URL
                       }/uploads/profile_pictures/default-avatar.webp`
@@ -447,9 +445,7 @@ function Profile() {
                             <img
                               src={
                                 neighbor.profile_pic
-                                  ? `${import.meta.env.VITE_API_URL}${
-                                      neighbor.profile_pic
-                                    }`
+                                  ? `${neighbor.profile_pic}`
                                   : `/uploads/profile_pictures/default-avatar.webp`
                               }
                               alt="Profile"

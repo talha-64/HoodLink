@@ -98,7 +98,7 @@ function CommentCard({ comment, allowControls, onReload }) {
       <div className="flex gap-4">
         {/* Avatar */}
         <img
-          src={`${import.meta.env.VITE_API_URL}${comment?.profile_pic}`}
+          src={`${comment?.profile_pic}`}
           alt={comment?.full_name}
           className="h-10 w-10 rounded-full object-cover ring-1 ring-white/10"
         />
