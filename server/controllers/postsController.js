@@ -1,11 +1,74 @@
 import express from "express";
 import pool from "../db.js";
+import { v2 as cloudinary } from "cloudinary";
+
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// export const createPost = async (req, res) => {
+//   const { title, content, category } = req.body;
+//   const categories = ["help_request", "news", "lost_and_found"];
+
+//   try {
+//     const userId = req.user.id;
+//     const neighborhood_id = req.user.neighborhood_id;
+
+//     if (!title || !content) {
+//       return res
+//         .status(400)
+//         .json({ message: "Title and content cannot be empty" });
+//     }
+
+//     if (!categories.includes(category)) {
+//       return res.status(400).json({ message: "Invalid Category" });
+//     }
+
+//     await pool.query("BEGIN");
+
+//     const postResult = await pool.query(
+//       "INSERT INTO posts (user_id, neighborhood_id, title, content,  category) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+//       [userId, neighborhood_id, title.trim(), content.trim(), category || null]
+//     );
+
+//     const newPost = postResult.rows[0];
+//     const postId = newPost.id;
+
+//     if (req.files && req.files.length > 0) {
+//       const imagePaths = req.files.map(
+//         (file) => `/uploads/posts/${file.filename}`
+//       );
+
+//       for (const path of imagePaths) {
+//         await pool.query(
+//           `INSERT INTO post_images (post_id, image_path) VALUES ($1, $2)`,
+//           [postId, path]
+//         );
+//       }
+//     }
+
+//     const imagesResult = await pool.query(
+//       `SELECT image_path FROM post_images WHERE post_id = $1`,
+//       [postId]
+//     );
+
+//     await pool.query("COMMIT");
+
+//     res.status(201).json({
+//       message: "Posted successfully",
+//       post: {
+//         ...newPost,
+//         images: imagesResult.rows.map((row) => row.image_path),
+//       },
+//     });
+//   } catch (err) {
+//     await pool.query("ROLLBACK");
+//     console.log(err.message);
+//     res.status(500).json({ Error: "Server Error" });
+//   }
+// };
 
 export const createPost = async (req, res) => {
   const { title, content, category } = req.body;
@@ -28,22 +91,23 @@ export const createPost = async (req, res) => {
     await pool.query("BEGIN");
 
     const postResult = await pool.query(
-      "INSERT INTO posts (user_id, neighborhood_id, title, content,  category) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      `INSERT INTO posts (user_id, neighborhood_id, title, content, category) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [userId, neighborhood_id, title.trim(), content.trim(), category || null]
     );
 
     const newPost = postResult.rows[0];
     const postId = newPost.id;
 
+    // -------- Cloudinary Multer Files ----------
     if (req.files && req.files.length > 0) {
-      const imagePaths = req.files.map(
-        (file) => `/uploads/posts/${file.filename}`
-      );
-
-      for (const path of imagePaths) {
+      for (const file of req.files) {
+        // Multer + CloudinaryStorage already uploaded the file
+        // file.path -> secure_url
+        // file.filename -> public_id
         await pool.query(
-          `INSERT INTO post_images (post_id, image_path) VALUES ($1, $2)`,
-          [postId, path]
+          `INSERT INTO post_images (post_id, image_path, image_public_id) VALUES ($1, $2, $3)`,
+          [postId, file.path, file.filename]
         );
       }
     }
@@ -64,7 +128,7 @@ export const createPost = async (req, res) => {
     });
   } catch (err) {
     await pool.query("ROLLBACK");
-    console.log(err.message);
+    console.error("Post creation error:", err.message);
     res.status(500).json({ Error: "Server Error" });
   }
 };
@@ -338,10 +402,57 @@ export const getMyPosts = async (req, res) => {
   }
 };
 
+// export const deletePost = async (req, res) => {
+//   const userId = req.user.id;
+//   const postId = req.params.postId;
+//   try {
+//     const postResult = await pool.query("SELECT * FROM posts WHERE id = $1", [
+//       postId,
+//     ]);
+
+//     if (postResult.rows.length === 0) {
+//       return res.status(404).json({ message: "Post not found" });
+//     }
+
+//     const postAuthor = postResult.rows[0].user_id;
+
+//     if (postAuthor !== userId) {
+//       return res
+//         .status(403)
+//         .json({ message: "You don't have permission to delete this post" });
+//     }
+
+//     const imagesResult = await pool.query(
+//       "SELECT image_path FROM post_images WHERE post_id = $1",
+//       [postId]
+//     );
+
+//     const imagePaths = imagesResult.rows.map((row) => row.image_path);
+
+//     imagePaths.forEach((picPath) => {
+//       const oldFilePath = path.join(__dirname, `../..${picPath}`);
+//       if (fs.existsSync(oldFilePath)) {
+//         fs.unlinkSync(oldFilePath);
+//       }
+//     });
+
+//     await pool.query("DELETE FROM post_images WHERE post_id = $1", [postId]);
+
+//     await pool.query(`DELETE FROM posts WHERE id = $1`, [postId]);
+
+//     res.status(200).json({ message: "Post Deleted successfully" });
+//   } catch (err) {
+//     console.log(err.message);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
+
 export const deletePost = async (req, res) => {
   const userId = req.user.id;
   const postId = req.params.postId;
+
   try {
+    // Check if post exists
     const postResult = await pool.query("SELECT * FROM posts WHERE id = $1", [
       postId,
     ]);
@@ -350,38 +461,118 @@ export const deletePost = async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
+    // Check ownership
     const postAuthor = postResult.rows[0].user_id;
-
     if (postAuthor !== userId) {
       return res
         .status(403)
         .json({ message: "You don't have permission to delete this post" });
     }
 
+    // Fetch images
     const imagesResult = await pool.query(
-      "SELECT image_path FROM post_images WHERE post_id = $1",
+      "SELECT image_public_id FROM post_images WHERE post_id = $1",
       [postId]
     );
 
-    const imagePaths = imagesResult.rows.map((row) => row.image_path);
-
-    imagePaths.forEach((picPath) => {
-      const oldFilePath = path.join(__dirname, `../..${picPath}`);
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath);
+    // Delete images from Cloudinary
+    for (const row of imagesResult.rows) {
+      if (row.image_public_id) {
+        await cloudinary.uploader.destroy(row.image_public_id);
       }
-    });
+    }
 
+    // Delete image records from DB
     await pool.query("DELETE FROM post_images WHERE post_id = $1", [postId]);
 
-    await pool.query(`DELETE FROM posts WHERE id = $1`, [postId]);
+    // Delete post
+    await pool.query("DELETE FROM posts WHERE id = $1", [postId]);
 
-    res.status(200).json({ message: "Post Deleted successfully" });
+    res.status(200).json({ message: "Post deleted successfully" });
   } catch (err) {
-    console.log(err.message);
+    console.error("Delete post error:", err.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// export const updatePost = async (req, res) => {
+//   const userId = req.user.id;
+//   const postId = req.params.postId;
+//   const categories = ["help_request", "news", "lost_and_found"];
+//   const { title, content, category } = req.body;
+
+//   try {
+//     const postResult = await pool.query("SELECT * FROM posts WHERE id = $1", [
+//       postId,
+//     ]);
+//     if (postResult.rows.length === 0) {
+//       return res.status(404).json({ message: "Post not found" });
+//     }
+//     const post = postResult.rows[0];
+
+//     if (post.user_id !== userId) {
+//       return res.status(403).json({ message: "You cannot edit this post" });
+//     }
+
+//     if (!title || !content) {
+//       return res
+//         .status(400)
+//         .json({ message: "Title and content cannot be empty" });
+//     }
+//     if (category && !categories.includes(category)) {
+//       return res.status(400).json({ message: "Invalid Category" });
+//     }
+
+//     const oldImagesResult = await pool.query(
+//       "SELECT * FROM post_images WHERE post_id = $1",
+//       [postId]
+//     );
+//     const oldImages = oldImagesResult.rows;
+
+//     if (oldImages.length > 0) {
+//       for (const img of oldImages) {
+//         const oldFilePath = path.join(__dirname, `../..${img.image_path}`);
+//         if (fs.existsSync(oldFilePath)) {
+//           try {
+//             fs.unlinkSync(oldFilePath);
+//           } catch (err) {
+//             console.error(`Failed to delete file: ${oldFilePath}`, err.message);
+//           }
+//         }
+//       }
+//       await pool.query("DELETE FROM post_images WHERE post_id = $1", [postId]);
+//     }
+
+//     if (req.files && req.files.length > 0) {
+//       for (const file of req.files) {
+//         const imagePath = `/uploads/posts/${file.filename}`;
+//         await pool.query(
+//           "INSERT INTO post_images (post_id, image_path) VALUES ($1, $2)",
+//           [postId, imagePath]
+//         );
+//       }
+//     }
+
+//     const updatedPost = await pool.query(
+//       `UPDATE posts SET title = $1, content = $2, category = $3 WHERE id = $4`,
+//       [
+//         title || post.title,
+//         content || post.content,
+//         category || post.category,
+//         postId,
+//       ]
+//     );
+
+//     res.status(200).json({
+//       message: "Post Updated Successfully",
+//       post: updatedPost.rows[0],
+//     });
+//   } catch (err) {
+//     console.error("updatePost error:", err.message);
+
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
 
 export const updatePost = async (req, res) => {
   const userId = req.user.id;
@@ -390,6 +581,7 @@ export const updatePost = async (req, res) => {
   const { title, content, category } = req.body;
 
   try {
+    // Check if post exists
     const postResult = await pool.query("SELECT * FROM posts WHERE id = $1", [
       postId,
     ]);
@@ -398,10 +590,12 @@ export const updatePost = async (req, res) => {
     }
     const post = postResult.rows[0];
 
+    // Verify ownership
     if (post.user_id !== userId) {
       return res.status(403).json({ message: "You cannot edit this post" });
     }
 
+    // Validate fields
     if (!title || !content) {
       return res
         .status(400)
@@ -411,38 +605,43 @@ export const updatePost = async (req, res) => {
       return res.status(400).json({ message: "Invalid Category" });
     }
 
+    // Begin transaction
+    await pool.query("BEGIN");
+
+    // Delete old images (from Cloudinary + DB)
     const oldImagesResult = await pool.query(
-      "SELECT * FROM post_images WHERE post_id = $1",
+      "SELECT image_public_id FROM post_images WHERE post_id = $1",
       [postId]
     );
-    const oldImages = oldImagesResult.rows;
-
-    if (oldImages.length > 0) {
-      for (const img of oldImages) {
-        const oldFilePath = path.join(__dirname, `../..${img.image_path}`);
-        if (fs.existsSync(oldFilePath)) {
-          try {
-            fs.unlinkSync(oldFilePath);
-          } catch (err) {
-            console.error(`Failed to delete file: ${oldFilePath}`, err.message);
-          }
+    for (const img of oldImagesResult.rows) {
+      if (img.image_public_id) {
+        try {
+          await cloudinary.uploader.destroy(img.image_public_id);
+        } catch (err) {
+          console.error(
+            `Failed to delete Cloudinary image: ${img.image_public_id}`,
+            err.message
+          );
         }
       }
-      await pool.query("DELETE FROM post_images WHERE post_id = $1", [postId]);
     }
+    await pool.query("DELETE FROM post_images WHERE post_id = $1", [postId]);
 
+    // Insert new images if provided (req.files already has Cloudinary URLs)
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const imagePath = `/uploads/posts/${file.filename}`;
         await pool.query(
-          "INSERT INTO post_images (post_id, image_path) VALUES ($1, $2)",
-          [postId, imagePath]
+          "INSERT INTO post_images (post_id, image_path, image_public_id) VALUES ($1, $2, $3)",
+          [postId, file.path, file.filename] // <-- Multer-Cloudinary provides these
         );
       }
     }
 
+    // Update post
     const updatedPost = await pool.query(
-      `UPDATE posts SET title = $1, content = $2, category = $3 WHERE id = $4`,
+      `UPDATE posts 
+       SET title = $1, content = $2, category = $3 
+       WHERE id = $4 RETURNING *`,
       [
         title || post.title,
         content || post.content,
@@ -451,16 +650,28 @@ export const updatePost = async (req, res) => {
       ]
     );
 
+    // Fetch new images
+    const imagesResult = await pool.query(
+      "SELECT image_path FROM post_images WHERE post_id = $1",
+      [postId]
+    );
+
+    await pool.query("COMMIT");
+
     res.status(200).json({
       message: "Post Updated Successfully",
-      post: updatedPost.rows[0],
+      post: {
+        ...updatedPost.rows[0],
+        images: imagesResult.rows.map((row) => row.image_path),
+      },
     });
   } catch (err) {
+    await pool.query("ROLLBACK");
     console.error("updatePost error:", err.message);
-
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 //----------------------------------------------------------------
 
 // unsed for now

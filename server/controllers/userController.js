@@ -1,26 +1,18 @@
-import fs from "fs";
 import pool from "../db.js";
 import bcrypt, { hash } from "bcrypt";
-import path from "path";
-import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
-import { error } from "console";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import cloudinary from "../cloudinary.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export const registerUser = async (req, res) => {
   const { full_name, email, password, phone, postal_code } = req.body;
-  const avatar = req.savedFileName || null;
-  let profile_pic_path = null;
 
   try {
     if (!full_name || !email || !password) {
       return res
         .status(400)
-        .json({ message: "Name ,Email or Password cannot be empty" });
+        .json({ message: "Name, Email or Password cannot be empty" });
     }
 
     const existingUser = await pool.query(
@@ -31,50 +23,56 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    let neighborhoodResult = await pool.query(
+    const neighborhoodResult = await pool.query(
       `SELECT id FROM neighborhoods WHERE postal_code = $1`,
       [postal_code]
     );
-
-    if (avatar) {
-      profile_pic_path = `/uploads/profile_pictures/${avatar}`;
-    }
-
     if (neighborhoodResult.rows.length === 0) {
       return res.status(400).json({ message: "Invalid postal code" });
     }
 
-    function validateEmail(e) {
-      var filter =
-        /^\s*[\w\-\+_]+(\.[\w\-\+_]+)*\@[\w\-\+_]+\.[\w\-\+_]+(\.[\w\-\+_]+)*\s*$/;
-      return String(e).search(filter) != -1;
-    }
-
+    const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
     if (!validateEmail(email)) {
       return res.status(400).json({ message: "Invalid Email" });
     }
 
-    const neighborhood_id = neighborhoodResult.rows[0].id;
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
-      "INSERT INTO users (full_name, email, password, phone, neighborhood_id, profile_pic) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+    let profile_pic_path = null;
+    let profile_pic_public_id = null;
+
+    // ------------------ CLOUDINARY (via Multer) ------------------
+    if (req.file) {
+      profile_pic_path = req.file.path; // Cloudinary URL
+      profile_pic_public_id = req.file.filename; // public_id from Cloudinary
+    }
+
+    await pool.query(
+      `INSERT INTO users 
+      (full_name, email, password, phone, neighborhood_id, profile_pic, profile_pic_public_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         full_name.trim(),
         email.toLowerCase().trim(),
         hashedPassword,
-        phone.trim() || null,
-        neighborhood_id,
-        profile_pic_path || null,
+        phone?.trim() || null,
+        neighborhoodResult.rows[0].id,
+        profile_pic_path,
+        profile_pic_public_id,
       ]
     );
 
     res.status(201).json({
       message: "User registered successfully",
+      profile_pic: profile_pic_path,
+      profile_pic_public_id,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error" });
+    console.error(
+      "Server error in registerUser:",
+      JSON.stringify(err, null, 2)
+    );
+    res.status(500).json({ message: "Server Error", error: err });
   }
 };
 
@@ -231,39 +229,30 @@ export const userProfile = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   const id = req.user.id;
-  const { password } = req.body;
+
   try {
-    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
-      id,
-    ]);
+    const userResult = await pool.query(
+      "SELECT profile_pic_public_id FROM users WHERE id = $1",
+      [id]
+    );
 
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const hashedPassword = userResult.rows[0].password;
-    const profilePic = userResult.rows[0].profile_pic;
-
-    const match = await bcrypt.compare(password, hashedPassword);
-
-    if (!match) {
-      return res.status(400).json({ message: "Invalid Password" });
+    // Delete profile picture from Cloudinary
+    if (userResult.rows[0].profile_pic_public_id) {
+      await cloudinary.uploader.destroy(
+        userResult.rows[0].profile_pic_public_id
+      );
     }
 
-    const oldProfilePic = userResult.rows[0].profile_pic;
+    // Delete user from DB
+    await pool.query("DELETE FROM users WHERE id = $1", [id]);
 
-    if (oldProfilePic) {
-      const oldFilePath = path.join(__dirname, `../..${oldProfilePic}`);
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath);
-      }
-    }
-
-    await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
-    res.status(200).json({ msg: "User Deleted successfully" });
-    // res.redirect("/register");
+    res.status(200).json({ msg: "User deleted successfully" });
   } catch (err) {
-    console.log(err.message);
+    console.error(err.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -331,12 +320,10 @@ export const updateProfileInfo = async (req, res) => {
 
 export const updateProfilePhoto = async (req, res) => {
   const id = req.user.id;
-  const avatar = req.savedFileName || null;
-  let profile_pic_path = null;
 
   try {
     const userResult = await pool.query(
-      "SELECT profile_pic FROM users WHERE id = $1",
+      "SELECT profile_pic_public_id FROM users WHERE id = $1",
       [id]
     );
 
@@ -344,43 +331,30 @@ export const updateProfilePhoto = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const oldProfilePic = userResult.rows[0].profile_pic;
-
-    if (avatar) {
-      profile_pic_path = `/uploads/profile_pictures/${avatar}`;
-
-      // remove old photo if exists
-      if (oldProfilePic) {
-        const oldFilePath = path.join(__dirname, `../..${oldProfilePic}`);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-        }
-      }
-
-      const updatedUser = await pool.query(
-        `UPDATE users SET profile_pic = $1 WHERE id = $2 RETURNING id, full_name, email, profile_pic, phone, created_at`,
-        [profile_pic_path, id]
-      );
-
-      return res.status(200).json({
-        msg: "Profile Picture Updated Successfully",
-        user: updatedUser.rows[0],
-      });
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
     }
 
-    if (oldProfilePic) {
-      const oldFilePath = path.join(__dirname, `../..${oldProfilePic}`);
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath);
-      }
+    const profile_pic_path = req.file.path;
+    const profile_pic_public_id = req.file.filename;
+
+    // Delete old profile pic from Cloudinary
+    if (userResult.rows[0].profile_pic_public_id) {
+      await cloudinary.uploader.destroy(
+        userResult.rows[0].profile_pic_public_id
+      );
     }
 
     const updatedUser = await pool.query(
-      `UPDATE users SET profile_pic = NULL WHERE id = $1 RETURNING id, full_name, email, profile_pic, phone, created_at`,
-      [id]
+      `UPDATE users 
+       SET profile_pic = $1, profile_pic_public_id = $2 
+       WHERE id = $3 
+       RETURNING id, full_name, email, profile_pic, phone, created_at`,
+      [profile_pic_path, profile_pic_public_id, id]
     );
 
     return res.status(200).json({
+      msg: "Profile Picture Updated Successfully",
       user: updatedUser.rows[0],
     });
   } catch (err) {
