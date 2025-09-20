@@ -17,10 +17,13 @@ const app = express();
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://hood-link-deplyment.vercel.app"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // add OPTIONS
+    allowedHeaders: ["Content-Type", "Authorization"], // add this too
     credentials: true,
   })
 );
+
+app.options("*", cors());
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
