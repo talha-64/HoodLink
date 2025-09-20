@@ -16,7 +16,11 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://hood-link-deplyment.vercel.app"],
+    origin: [
+      "http://localhost:5173",
+      "https://hood-link-deplyment.vercel.app",
+      /\.vercel\.app$/,
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // add OPTIONS
     allowedHeaders: ["Content-Type", "Authorization"], // add this too
     credentials: true,
