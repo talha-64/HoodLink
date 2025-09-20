@@ -16,13 +16,23 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://hood-link-deplyment.vercel.app",
-      /\.vercel\.app$/,
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // add OPTIONS
-    allowedHeaders: ["Content-Type", "Authorization"], // add this too
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "https://hood-link-deplyment.vercel.app",
+      ];
+      if (
+        allowedOrigins.includes(origin) ||
+        /\.vercel\.app$/.test(origin) || // match all preview deployments
+        !origin // allow tools like Postman
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
