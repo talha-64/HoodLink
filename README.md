@@ -10,7 +10,7 @@
 
 ## 🎥 Demo Video  
 📌 [Watch the demo here](#)
-https://github.com/user-attachments/assets/02293a24-af9d-4d52-9048-b91931092c03
+![Demo Video](https://github.com/user-attachments/assets/02293a24-af9d-4d52-9048-b91931092c03)
 ---
 
 ## 📖 About the Project  
