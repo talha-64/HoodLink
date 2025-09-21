@@ -1,10 +1,6 @@
 # HoodLink - A Local Community Collaboration App  
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)  
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green?logo=node.js)](https://nodejs.org/)  
-[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)  
-[![Express.js](https://img.shields.io/badge/Express.js-backend-black?logo=express)](https://expressjs.com/)  
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)](https://www.postgresql.org/)  
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)    [![Node.js](https://img.shields.io/badge/Node.js-18.x-green?logo=node.js)](https://nodejs.org/)    [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)    [![Express.js](https://img.shields.io/badge/Express.js-backend-black?logo=express)](https://expressjs.com/)    [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)](https://www.postgresql.org/)  
 
 ---
 
