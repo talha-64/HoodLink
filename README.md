@@ -1,15 +1,16 @@
 # HoodLink - A Local Community Collaboration App  
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)    
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green?logo=node.js)](https://nodejs.org/)    
-[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)    
-[![Express.js](https://img.shields.io/badge/Express.js-backend-black?logo=express)](https://expressjs.com/)    
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)](https://www.postgresql.org/)  
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg"></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-18.x-green?logo=node.js"></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-blue?logo=react"></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://expressjs.com/"><img src="https://img.shields.io/badge/Express.js-backend-black?logo=express"></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql"></a>
+</p>
 
 ---
 
 ## 🎥 Demo Video  
-📌 Watch the demo here
 
 [![Alt Text](https://github.com/user-attachments/assets/18ef0c42-b8f6-4c73-8264-71d7ddda1cc4)](https://github.com/user-attachments/assets/7468c5be-1403-477a-bfa3-47fe197bca7f)
 
